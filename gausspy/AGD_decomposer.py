@@ -7,19 +7,18 @@ import time
 
 # Standard Third Party
 import numpy as np
-import scipy.interpolate.interp1d as interp1d
+from scipy.interpolate import interp1d
 
 # from scipy.optimize import leastsq, minimize
-import lmfit.minimize as lmfit_minimize
-import lmfit.Parameters as Parameters
+from lmfit import minimize as lmfit_minimize
+from lmfit import Parameters
 
 # import matplotlib.pyplot as plt
-import numpy.linalg.lstsq as lstsq
-import scipy.ndimage.filters.median_filter as median_filter
-import scipy.ndimage.filters.convolve as convolve
+from numpy.linalg import lstsq
+from scipy.ndimage.filters import median_filter, convolve
 
 # Python Regularized derivatives
-import .tvdiff as tvdiff
+from . import tvdiff
 
 
 def vals_vec_from_lmfit(lmfit_params):
@@ -49,8 +48,9 @@ def paramvec_to_lmfit(paramvec):
 
 def paramvec_p3_to_lmfit(paramvec):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
-    print('hello')
-    
+    print('These are the paramvec values')
+    print(paramvec)
+
     ncomps = len(paramvec) // 5
     params = Parameters()
     labels = np.concatenate(
@@ -63,6 +63,7 @@ def paramvec_p3_to_lmfit(paramvec):
     tau = paramvec[4 * ncomps :]
 
     slop = 0.1
+    print(labels)
     for i in range(len(paramvec) - ncomps * 2):
         if i < ncomps:
             if labels[i] == 1:
@@ -71,9 +72,9 @@ def paramvec_p3_to_lmfit(paramvec):
                     * np.float(paramvec[i + ncomps]) ** 2
                     * (1.0 - np.exp(-1.0 * tau[i]))
                 )
-                params.add("p" + str(i + 1), value=paramvec[i], min=0.0, max=max_tb)
+                params.add("p" + str(i + 1), value=paramvec[i], min=5.0, max=max_tb)
             else:
-                params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
+                params.add("p" + str(i + 1), value=paramvec[i], min=5.0)
         if i >= ncomps and i < 2 * ncomps:
             if labels[i] == 1:
                 params.add(
@@ -648,7 +649,7 @@ def AGD_double(
 ):
     """ Autonomous Gaussian Decomposition
     """
-    print('IT IS UPDATING2')
+    print('IT IS UPDATING')
     if type(SNR2_thresh) != type([]):
         SNR2_thresh = [SNR2_thresh, SNR2_thresh]
     if type(SNR_thresh) != type([]):
