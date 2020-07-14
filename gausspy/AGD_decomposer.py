@@ -7,18 +7,19 @@ import time
 
 # Standard Third Party
 import numpy as np
-from scipy.interpolate import interp1d
+import scipy.interpolate.interp1d as interp1d
 
 # from scipy.optimize import leastsq, minimize
-from lmfit import minimize as lmfit_minimize
-from lmfit import Parameters
+import lmfit.minimize as lmfit_minimize
+import lmfit.Parameters as Parameters
 
 # import matplotlib.pyplot as plt
-from numpy.linalg import lstsq
-from scipy.ndimage.filters import median_filter, convolve
+import numpy.linalg.lstsq as lstsq
+import scipy.ndimage.filters.median_filter as median_filter
+import scipy.ndimage.filters.convolve as convolve
 
 # Python Regularized derivatives
-from . import tvdiff
+import .tvdiff as tvdiff
 
 
 def vals_vec_from_lmfit(lmfit_params):
@@ -48,6 +49,8 @@ def paramvec_to_lmfit(paramvec):
 
 def paramvec_p3_to_lmfit(paramvec):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
+    print('hello')
+    
     ncomps = len(paramvec) // 5
     params = Parameters()
     labels = np.concatenate(
@@ -59,7 +62,7 @@ def paramvec_p3_to_lmfit(paramvec):
     )
     tau = paramvec[4 * ncomps :]
 
-    val = 0.1
+    slop = 0.1
     for i in range(len(paramvec) - ncomps * 2):
         if i < ncomps:
             if labels[i] == 1:
@@ -76,8 +79,8 @@ def paramvec_p3_to_lmfit(paramvec):
                 params.add(
                     "p" + str(i + 1),
                     value=paramvec[i],
-                    min=paramvec[i] - val * paramvec[i],
-                    max=paramvec[i] + val * paramvec[i],
+                    min=paramvec[i] - slop * paramvec[i],
+                    max=paramvec[i] + slop * paramvec[i],
                 )
             else:
                 params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
@@ -86,8 +89,8 @@ def paramvec_p3_to_lmfit(paramvec):
                 params.add(
                     "p" + str(i + 1),
                     value=paramvec[i],
-                    min=paramvec[i] - val * paramvec[i],
-                    max=paramvec[i] + val * paramvec[i],
+                    min=paramvec[i] - slop * paramvec[i],
+                    max=paramvec[i] + slop * paramvec[i],
                 )
             else:
                 params.add("p" + str(i + 1), value=paramvec[i])
@@ -645,7 +648,7 @@ def AGD_double(
 ):
     """ Autonomous Gaussian Decomposition
     """
-
+    print('IT IS UPDATING2')
     if type(SNR2_thresh) != type([]):
         SNR2_thresh = [SNR2_thresh, SNR2_thresh]
     if type(SNR_thresh) != type([]):
@@ -897,6 +900,7 @@ def AGD_double(
 
         # Final fit using constrained parameters
         t0 = time.time()
+        print('hello')
         lmfit_params = paramvec_p3_to_lmfit(params_full)
         result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
         params_em = vals_vec_from_lmfit(result_em.params)
