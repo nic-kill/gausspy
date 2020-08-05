@@ -39,7 +39,7 @@ def paramvec_to_lmfit(paramvec):
     params = Parameters()
     for i in range(len(paramvec)):
         if i < ncomps:
-            params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
+            params.add("p" + str(i + 1), value=paramvec[i], min=0.00065*5) #set to ~5 std dev rms of tau
         else:
             params.add("p" + str(i + 1), value=paramvec[i])
 
@@ -48,8 +48,6 @@ def paramvec_to_lmfit(paramvec):
 
 def paramvec_p3_to_lmfit(paramvec):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
-    print('These are the paramvec values')
-    print(paramvec)
 
     ncomps = len(paramvec) // 5
     params = Parameters()
@@ -63,7 +61,7 @@ def paramvec_p3_to_lmfit(paramvec):
     tau = paramvec[4 * ncomps :]
 
     slop = 0.1
-    print(labels)
+
     for i in range(len(paramvec) - ncomps * 2):
         if i < ncomps:
             if labels[i] == 1:
@@ -72,9 +70,9 @@ def paramvec_p3_to_lmfit(paramvec):
                     * np.float(paramvec[i + ncomps]) ** 2
                     * (1.0 - np.exp(-1.0 * tau[i]))
                 )
-                params.add("p" + str(i + 1), value=paramvec[i], min=5.0, max=max_tb)
+                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*5, max=max_tb) #min set to ~5sigma based on gass bonn figure from server
             else:
-                params.add("p" + str(i + 1), value=paramvec[i], min=5.0)
+                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*5)#min set to ~5sigma based on gass bonn figure from server
         if i >= ncomps and i < 2 * ncomps:
             if labels[i] == 1:
                 params.add(
@@ -649,7 +647,7 @@ def AGD_double(
 ):
     """ Autonomous Gaussian Decomposition
     """
-    print('IT IS UPDATING')
+ 
     if type(SNR2_thresh) != type([]):
         SNR2_thresh = [SNR2_thresh, SNR2_thresh]
     if type(SNR_thresh) != type([]):
@@ -901,7 +899,6 @@ def AGD_double(
 
         # Final fit using constrained parameters
         t0 = time.time()
-        print('hello')
         lmfit_params = paramvec_p3_to_lmfit(params_full)
         result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
         params_em = vals_vec_from_lmfit(result_em.params)
