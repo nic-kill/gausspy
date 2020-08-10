@@ -70,9 +70,9 @@ def paramvec_p3_to_lmfit(paramvec):
                     * np.float(paramvec[i + ncomps]) ** 2
                     * (1.0 - np.exp(-1.0 * tau[i]))
                 )
-                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*1, max=max_tb) #min set to ~5sigma based on gass bonn figure from server
+                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*5, max=max_tb) #min set to ~5sigma based on gass bonn figure from server
             else:
-                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*1)#min set to ~5sigma based on gass bonn figure from server
+                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*5)#min set to ~5sigma based on gass bonn figure from server
         if i >= ncomps and i < 2 * ncomps:
             if labels[i] == 1:
                 params.add(
