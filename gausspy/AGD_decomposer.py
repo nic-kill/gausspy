@@ -39,7 +39,7 @@ def paramvec_to_lmfit(paramvec):
     params = Parameters()
     for i in range(len(paramvec)):
         if i < ncomps:
-            params.add("p" + str(i + 1), value=paramvec[i], min=0.00065*1) #set to ~5 std dev rms of tau
+            params.add("p" + str(i + 1), value=paramvec[i], min=0.00065*5) #set to ~5 std dev rms of tau
         else:
             params.add("p" + str(i + 1), value=paramvec[i])
 
@@ -1035,7 +1035,7 @@ def AGD_double(
     # Construct output dictionary (odict)
     # -----------------------------------
     odict["N_components_em"] = ncomps_emfit
-    if ncomps_emfit > ncomps_fit:
+    if ncomps_emfit >= ncomps_fit:
         odict["best_fit_parameters_em"] = params_emfit
         odict["best_fit_errors_em"] = params_emfit_errs
         odict["fit_labels"] = labels_emf
