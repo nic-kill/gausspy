@@ -46,7 +46,7 @@ def paramvec_to_lmfit(paramvec):
     return params
 
 
-def paramvec_p3_to_lmfit(paramvec):
+def paramvec_p3_to_lmfit(paramvec, slop):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
 
     ncomps = len(paramvec) // 5
@@ -59,8 +59,6 @@ def paramvec_p3_to_lmfit(paramvec):
         ]
     )
     tau = paramvec[4 * ncomps :]
-
-    slop = 0.1
 
     for i in range(len(paramvec) - ncomps * 2):
         if i < ncomps:
@@ -641,6 +639,7 @@ def AGD_double(
     SNR_thresh=5.0,
     BLFrac=0.1,
     SNR2_thresh=5.0,
+    slop=0.1,
     deblend=True,
     perform_final_fit=True,
     phase="one",
@@ -899,7 +898,7 @@ def AGD_double(
 
         # Final fit using constrained parameters
         t0 = time.time()
-        lmfit_params = paramvec_p3_to_lmfit(params_full)
+        lmfit_params = paramvec_p3_to_lmfit(params_full, slop)
         result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
         params_em = vals_vec_from_lmfit(result_em.params)
         params_em_errs = errs_vec_from_lmfit(result_em.params)
@@ -1016,7 +1015,7 @@ def AGD_double(
 
         # Final fit using constrained parameters
         t0 = time.time()
-        lmfit_params = paramvec_p3_to_lmfit(params_full)
+        lmfit_params = paramvec_p3_to_lmfit(params_full, slop)
         result3 = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
         params_emfit = vals_vec_from_lmfit(result3.params)
         params_emfit_errs = errs_vec_from_lmfit(result3.params)

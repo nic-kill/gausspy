@@ -25,6 +25,7 @@ class GaussianDecomposer(object):
                 "phase": "one",
                 "SNR2_thresh": 5.0,
                 "SNR_thresh": 5.0,
+                "slop": 0.1,
                 "deblend": True,
                 "mode": "python",
                 "BLFrac": 0.1,
