@@ -64,16 +64,16 @@ def paramvec_p3_to_lmfit(paramvec):
 
     for i in range(len(paramvec) - ncomps * 2):
         if i < ncomps:
-            if labels[i] == 1:
+            if labels[i] == 1: #for the absorption matched components
                 max_tb = (
                     21.86
                     * np.float(paramvec[i + ncomps]) ** 2
                     * (1.0 - np.exp(-1.0 * tau[i]))
                 )
                 params.add("p" + str(i + 1), value=paramvec[i], min=0.055*1, max=max_tb) #min set to ~5sigma based on gass bonn figure from server
-            else:
+            else: #emission only
                 params.add("p" + str(i + 1), value=paramvec[i], min=0.055*1)#min set to ~5sigma based on gass bonn figure from server
-        if i >= ncomps and i < 2 * ncomps:
+        if i >= ncomps and i < 2 * ncomps: #width/FWHM
             if labels[i] == 1:
                 params.add(
                     "p" + str(i + 1),
@@ -83,7 +83,7 @@ def paramvec_p3_to_lmfit(paramvec):
                 )
             else:
                 params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
-        if i >= 2 * ncomps:
+        if i >= 2 * ncomps: #position
             if labels[i] == 1:
                 params.add(
                     "p" + str(i + 1),
