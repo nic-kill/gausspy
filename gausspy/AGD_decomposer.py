@@ -88,8 +88,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     else:
                         max_tb_value = max_tb
 
-                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)
-
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)
+                else:
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3)
         if i >= ncomps and i < 2 * ncomps:
             if labels[i] == 1:
                 if p_width < 0.001:
