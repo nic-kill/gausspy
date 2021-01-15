@@ -73,12 +73,23 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                         max_tb_value = max_tb
 
                     params.add(
-                        "p" + str(i + 1), value=paramvec[i], min=0.0, max=max_tb_value
+                        "p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value
                     )
                 else:
-                    params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3)
             else:
-                params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
+                if max_tb is not None:
+                    if max_tb == "max":
+                        max_tb_value = (
+                            21.86
+                            * np.float(paramvec[i + ncomps]) ** 2
+                            * (1.0 - np.exp(-3.0 * 0.0005897952))
+                        )
+                    else:
+                        max_tb_value = max_tb
+
+                params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)
+
         if i >= ncomps and i < 2 * ncomps:
             if labels[i] == 1:
                 if p_width < 0.001:
