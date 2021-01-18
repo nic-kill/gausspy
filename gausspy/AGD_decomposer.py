@@ -59,9 +59,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     )
     tau = paramvec[4 * ncomps :]
 
-    for i in range(len(paramvec) - ncomps * 2):
-        if i < ncomps:
-            if labels[i] == 1:
+    for i in range(len(paramvec) - ncomps * 2): #0.055mK is the estimate of the Tb noise from the GASS bonn server, 0.0005897952 is the measured tau noise
+        if i < ncomps: #Tb amplitudes
+            if labels[i] == 1: #abs-matched
                 if max_tb is not None:
                     if max_tb == "max":
                         max_tb_value = (
@@ -73,25 +73,25 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                         max_tb_value = max_tb
 
                     params.add(
-                        "p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value
+                        "p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value #3 sigma min and max set by the measured tau comp
                     )
                 else:
-                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3)
-            else:
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3) #3 sigma min 
+            else: #emission only
                 if max_tb is not None:
                     if max_tb == "max":
                         max_tb_value = (
                             21.86
                             * np.float(paramvec[i + ncomps]) ** 2
-                            * (1.0 - np.exp(-3.0 * 0.0005897952))
+                            * (1.0 - np.exp(-3.0 * 0.0005897952))#3 sigma min tau
                         )
                     else:
                         max_tb_value = max_tb
 
-                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)#3 sigma min
                 else:
-                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3)
-        if i >= ncomps and i < 2 * ncomps:
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3) #3 sigma min
+        if i >= ncomps and i < 2 * ncomps: #widths (FWHM)
             if labels[i] == 1:
                 if p_width < 0.001:
                     p_width = 0.001
@@ -103,7 +103,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 )
             else:
                 params.add("p" + str(i + 1), value=paramvec[i], min=min_dv)
-        if i >= 2 * ncomps:
+        if i >= 2 * ncomps: #mean positions
             if labels[i] == 1:
                 if d_mean < 0.001:
                     d_mean = 0.001
