@@ -92,7 +92,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 else:
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3) #3 sigma min
         if i >= ncomps and i < 2 * ncomps: #widths (FWHM)
-            if labels[i] == 1:
+            if labels[i] == 1: #abs-matched 
                 if p_width < 0.001:
                     p_width = 0.001
                 params.add(
@@ -101,10 +101,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     min=paramvec[i] - np.abs(p_width * paramvec[i]),
                     max=paramvec[i] + np.abs(p_width * paramvec[i]),
                 )
-            else:
+            else: #emission only
                 params.add("p" + str(i + 1), value=paramvec[i], min=min_dv)
         if i >= 2 * ncomps: #mean positions
-            if labels[i] == 1:
+            if labels[i] == 1: #abs-matched
                 if d_mean < 0.001:
                     d_mean = 0.001
                 params.add(
@@ -113,7 +113,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     min=paramvec[i] - d_mean,
                     max=paramvec[i] + d_mean,
                 )
-            else:
+            else: #emission only
                 params.add("p" + str(i + 1), value=paramvec[i])
     return params
 
