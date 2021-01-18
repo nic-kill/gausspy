@@ -39,9 +39,9 @@ def paramvec_to_lmfit(paramvec):
     params = Parameters()
     for i in range(len(paramvec)):
         if i < ncomps:
-            params.add("p" + str(i + 1), value=paramvec[i], min=0.0)
+            params.add("p" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
         else:
-            params.add("p" + str(i + 1), value=paramvec[i])
+            params.add("p" + str(i + 1), value=paramvec[i]) #not sure what the else condition here would be referring to...
 
     return params
 
