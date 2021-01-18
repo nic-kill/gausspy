@@ -47,6 +47,7 @@ def paramvec_to_lmfit(paramvec):
 
 
 
+
 def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
     ncomps = len(paramvec) // 5
