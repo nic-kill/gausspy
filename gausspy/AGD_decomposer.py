@@ -93,7 +93,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 else:
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3) #3 sigma min
         if i >= ncomps and i < 2 * ncomps: #widths (FWHM)
+            print('widths accessed')
             if labels[i] == 1: #abs-matched 
+                print(f'abs {i}')
                 if p_width < 0.001:
                     p_width = 0.001
                 params.add(
@@ -104,10 +106,12 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     max=paramvec[i] + np.abs(p_width * paramvec[i]),
                 )
             else: #emission only
+                print(f'em {i}')
                 params.add("p" + str(i + 1), 
                 value=paramvec[i], 
                 min=np.max([min_dv,
                 np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))]))
+                
         if i >= 2 * ncomps: #mean positions
             if labels[i] == 1: #abs-matched
                 if d_mean < 0.001:
@@ -308,8 +312,7 @@ def initialGuess(
     # Attempt deblending.
     # If Deblending results in all non-negative answers, keep.
     amps = np.array(data[offsets_data_i])
-    #keep only the FWHMs that will show up with valid emission components
-    keep = FWHMs > 0
+    keep = FWHMs > 0.0
     offsets = offsets[keep]
     FWHMs = FWHMs[keep]
     amps = amps[keep]
