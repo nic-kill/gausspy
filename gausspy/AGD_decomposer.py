@@ -38,11 +38,12 @@ def paramvec_to_lmfit(paramvec):
     ncomps = len(paramvec) // 3
     params = Parameters()
     for i in range(len(paramvec)):
-        if i < ncomps:
+        if i < ncomps: #for the amplitudes in opacity 
             params.add("p" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
-        else:
-            params.add("p" + str(i + 1), value=paramvec[i]) #not sure what the else condition here would be referring to...
-
+        if i >= ncomps and i < 2 * ncomps: #for the widths in opacity
+            params.add("p" + str(i + 1), value=paramvec[i], min=np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952)))))
+        else: #for else whcih currently is just the position
+            params.add("p" + str(i + 1), value=paramvec[i])
     return params
 
 
@@ -98,11 +99,15 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 params.add(
                     "p" + str(i + 1),
                     value=paramvec[i],
-                    min=paramvec[i] - np.abs(p_width * paramvec[i]),
+                    min=np.max([(paramvec[i] - np.abs(p_width * paramvec[i])),
+                    (np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952)))))]),
                     max=paramvec[i] + np.abs(p_width * paramvec[i]),
                 )
             else: #emission only
-                params.add("p" + str(i + 1), value=paramvec[i], min=min_dv)
+                params.add("p" + str(i + 1), 
+                value=paramvec[i], 
+                min=np.max([min_dv,
+                np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))]))
         if i >= 2 * ncomps: #mean positions
             if labels[i] == 1: #abs-matched
                 if d_mean < 0.001:
@@ -303,7 +308,8 @@ def initialGuess(
     # Attempt deblending.
     # If Deblending results in all non-negative answers, keep.
     amps = np.array(data[offsets_data_i])
-    keep = FWHMs > 0.0
+    #keep only the FWHMs that will show up with valid emission components
+    keep = FWHMs > 0
     offsets = offsets[keep]
     FWHMs = FWHMs[keep]
     amps = amps[keep]
@@ -742,7 +748,7 @@ def AGD_double(
         SNR2_thresh=SNR2_thresh[0],
         deblend=deblend,
     )
-
+    #width opacity guesses are put in here
     amps_g1, widths_g1, offsets_g1, u2 = (
         agd1["amps"],
         agd1["FWHMs"],
