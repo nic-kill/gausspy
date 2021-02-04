@@ -41,7 +41,8 @@ def paramvec_to_lmfit(paramvec):
         if i < ncomps: #for the amplitudes in opacity 
             params.add("p" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
         if i >= ncomps and i < 2 * ncomps: #for the widths in opacity
-            params.add("p" + str(i + 1), value=paramvec[i], min=np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952)))))
+            params.add("p" + str(i + 1), value=paramvec[i], 
+            min=np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952)))))
         else: #for else whcih currently is just the position
             params.add("p" + str(i + 1), value=paramvec[i])
     return params
@@ -62,8 +63,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
 
     for i in range(len(paramvec) - ncomps * 2): #0.055mK is the estimate of the Tb noise from the GASS bonn server, 0.0005897952 is the measured tau noise
         if i < ncomps: #Tb amplitudes
+            print(labels)
             if labels[i] == 1: #abs-matched
                 print(f'abs amps {i}')
+                print()
                 if max_tb is not None:
                     if max_tb == "max":
                         max_tb_value = (
@@ -73,10 +76,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                         )
                     else:
                         max_tb_value = max_tb
-
-                    params.add(
-                        "p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value #3 sigma min and max set by the measured tau comp
-                    )
+                    params.add("p" + str(i + 1), value=paramvec[i], min=0.050*3, max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
                 else:
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3) #3 sigma min 
             else: #emission only
@@ -90,7 +90,6 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                         )
                     else:
                         max_tb_value = max_tb
-
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)#3 sigma min
                 else:
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value) #3 sigma min
@@ -125,7 +124,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 )
             else: #emission only
                 params.add("p" + str(i + 1), value=paramvec[i])
-    print(params)
+    #print(params)
+    print(labels)
     return params
 
 
