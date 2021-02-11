@@ -62,26 +62,29 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     )
     tau = paramvec[4 * ncomps :]
 
+    min_ts=15
+
     for i in range(len(paramvec) - ncomps * 2): #0.055mK is the estimate of the Tb noise from the GASS bonn server, 0.0005897952 is the measured tau noise
         if i < ncomps: #Tb amplitudes
-            print(labels)
+            #print(labels)
             if labels[i] == 1: #abs-matched
-                print(f'abs amps {i}')
-                print()
+                #print(f'abs amps {i}')
                 if max_tb is not None:
                     if max_tb == "max":
+                        #set max amplitude based on the absorption fit amplitude and width to not be beyond what is possible when fully thermalised 
                         max_tb_value = (
                             21.86
                             * np.float(paramvec[i + ncomps]) ** 2
                             * (1.0 - np.exp(-1.0 * tau[i]))
                         )
                     else:
+                        #set arbitrary max temperature
                         max_tb_value = max_tb
-                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
+                    params.add("p" + str(i + 1), value=paramvec[i], min=min_ts*(1-np.exp(-tau[i])), max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
                 else:
-                    params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3) #3 sigma min 
+                    params.add("p" + str(i + 1), value=paramvec[i], min=min_ts*(1-np.exp(-tau[i]))) #3 sigma min 
             else: #emission only
-                print(f'em amps {i}')
+                #print(f'em amps {i}')
                 if max_tb is not None:
                     if max_tb == "max":
                         max_tb_value = (
@@ -96,7 +99,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value) #3 sigma min
         if i >= ncomps and i < 2 * ncomps: #widths (FWHM)
             if labels[i] == 1: #abs-matched 
-                print(f'abs width {i-ncomps}')
+                #print(f'abs width {i-ncomps}')
                 if p_width < 0.001:
                     p_width = 0.001
                 params.add(
@@ -107,7 +110,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     max=paramvec[i] + np.abs(p_width * paramvec[i]),
                 )
             else: #emission only
-                print(f'em width {i-ncomps}')
+                #print(f'em width {i-ncomps}')
                 params.add("p" + str(i + 1), 
                 value=paramvec[i], 
                 min=np.max([min_dv,
@@ -125,7 +128,6 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 )
             else: #emission only
                 params.add("p" + str(i + 1), value=paramvec[i])
-    #print(params)
     print(labels)
     print(params)
     return params
@@ -1018,12 +1020,10 @@ def AGD_double(
             params_full, max_tb, p_width, d_mean, min_dv
         )
         result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
-        print(f'result_em = {result_em}')
         params_em = vals_vec_from_lmfit(result_em.params)
-        print(f'params_em = {params_em}')
         params_em_errs = errs_vec_from_lmfit(result_em.params)
         ncomps_em = len(params_em) // 3
-        print(f'ncomps_em = {ncomps_em}')
+        
 
         # The "fitmask" is a collection of windows around the a list of two-phase absorption components
         fitmask, fitmaskw = create_fitmask(
@@ -1061,7 +1061,6 @@ def AGD_double(
     )
 
     ncomps_g3 = agd3["N_components"]
-    print(f'ncomps_g3 = {ncomps_g3}')
     if ncomps_g3 > 0:
         params_g3 = np.concatenate([agd3["amps"], agd3["FWHMs"], agd3["means"]])
     else:
