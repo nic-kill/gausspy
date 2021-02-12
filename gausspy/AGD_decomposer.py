@@ -65,9 +65,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     min_ts=15
 
     for i in range(len(paramvec) - ncomps * 2): #0.055mK is the estimate of the Tb noise from the GASS bonn server, 0.0005897952 is the measured tau noise
-        if i < ncomps: #Tb amplitudes
-            #print(labels)
-            if labels[i] == 1: #abs-matched
+        #Tb amplitudes
+        if i < ncomps: 
+            #abs-matched
+            if labels[i] == 1: 
                 #print(f'abs amps {i}')
                 if max_tb is not None:
                     if max_tb == "max":
@@ -80,13 +81,17 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     else:
                         #set arbitrary max temperature
                         max_tb_value = max_tb
+                    #add parametr with max bound
                     params.add("p" + str(i + 1), value=paramvec[i], min=min_ts*(1-np.exp(-tau[i])), max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
                 else:
+                    #add parameter without max bound
                     params.add("p" + str(i + 1), value=paramvec[i], min=min_ts*(1-np.exp(-tau[i]))) #3 sigma min 
-            else: #emission only
+            #emission only
+            else: 
                 #print(f'em amps {i}')
                 if max_tb is not None:
                     if max_tb == "max":
+                        #set the max Tb to be based on the absorption width and a 3 sigma tau
                         max_tb_value = (
                             21.86
                             * np.float(paramvec[i + ncomps]) ** 2
@@ -106,8 +111,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     "p" + str(i + 1),
                     value=paramvec[i],
                     min=np.max([(paramvec[i] - np.abs(p_width * paramvec[i])),
-                    (np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952)))))]),
-                    max=paramvec[i] + np.abs(p_width * paramvec[i]),
+                    (np.sqrt((0.055*3)/(21.866*(1-np.exp(-3*0.0005897952)))))]),
+                    max=paramvec[i] + np.abs(p_width * paramvec[i])
                 )
             else: #emission only
                 #print(f'em width {i-ncomps}')
