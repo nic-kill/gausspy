@@ -41,9 +41,9 @@ def paramvec_to_lmfit(paramvec):
         if i < ncomps: #for the amplitudes in opacity 
             params.add("p" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
         if i >= ncomps and i < 2 * ncomps: #for the widths in opacity
-            params.add("p" + str(i + 1), value=paramvec[i])#, 
-            #min=np.max([np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))])
-            #)
+            params.add("p" + str(i + 1), value=paramvec[i], 
+            min=np.max([np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))])
+            )
         else: #for else whcih currently is just the position
             params.add("p" + str(i + 1), value=paramvec[i])
     return params
@@ -65,9 +65,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     min_ts=15
 
     for i in range(len(paramvec) - ncomps * 2): #0.055mK is the estimate of the Tb noise from the GASS bonn server, 0.0005897952 is the measured tau noise
-        #Tb amplitudes
+        #Tb AMPLITUDES
         if i < ncomps: 
-            #abs-matched
+            #ABS-MATCHED
             if labels[i] == 1: 
                 #print(f'abs amps {i}')
                 if max_tb is not None:
@@ -86,8 +86,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 else:
                     #add parameter without max bound
                     params.add("p" + str(i + 1), value=paramvec[i], min=min_ts*(1-np.exp(-tau[i]))) #3 sigma min 
-            #emission only
-            else: 
+                #print(params[f'p{i+1}'].value)
+            #EMISSION ONLY
+            else:
                 #print(f'em amps {i}')
                 if max_tb is not None:
                     if max_tb == "max":
@@ -102,8 +103,11 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value)#3 sigma min
                 else:
                     params.add("p" + str(i + 1), value=paramvec[i], min=0.055*3, max=max_tb_value) #3 sigma min
-        if i >= ncomps and i < 2 * ncomps: #widths (FWHM)
-            if labels[i] == 1: #abs-matched 
+        
+        #WIDTHS (FWHM)
+        if i >= ncomps and i < 2 * ncomps: 
+            #ABS-MATCHED
+            if labels[i] == 1:  
                 #print(f'abs width {i-ncomps}')
                 if p_width < 0.001:
                     p_width = 0.001
@@ -111,17 +115,19 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     "p" + str(i + 1),
                     value=paramvec[i],
                     min=np.max([(paramvec[i] - np.abs(p_width * paramvec[i])),
-                    (np.sqrt((0.055*3)/(21.866*(1-np.exp(-3*0.0005897952)))))]),
+                    (np.sqrt((params[f'p{i-ncomps+1}'].value)/(21.866*(1-np.exp(-tau[i-ncomps])))))]), #need to change to be based on the just determined amplitude
                     max=paramvec[i] + np.abs(p_width * paramvec[i])
                 )
-            else: #emission only
-                #print(f'em width {i-ncomps}')
+            #EMISSION ONLY
+            else:
+                print(f'em width {i-ncomps}')
                 params.add("p" + str(i + 1), 
                 value=paramvec[i], 
                 min=np.max([min_dv,
                 np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))]))
                 
         if i >= 2 * ncomps: #mean positions
+            print(paramvec[i])
             if labels[i] == 1: #abs-matched
                 if d_mean < 0.001:
                     d_mean = 0.001
@@ -134,7 +140,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             else: #emission only
                 params.add("p" + str(i + 1), value=paramvec[i])
     print(labels)
-    print(params)
+    #print(params)
     return params
 
 
