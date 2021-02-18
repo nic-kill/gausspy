@@ -99,7 +99,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set max amplitude based on the absorption fit amplitude and width to not be beyond what is possible when fully thermalised 
                     max_tb_value = (
-                        21.86 #make 21.866
+                        21.866
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-1.0 * tau[i]))
                     )
@@ -108,13 +108,13 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     max_tb_value = max_tb
                 #add parametr with max bound
                 #print(f'max is {max_tb_value}')
-                params.add("p" + str(i + 1), value=emission_amps[i], min=min_ts*(1-np.exp(-tau[i])), max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
+                params.add(f'a{i}', value=emission_amps[i], min=min_ts*(1-np.exp(-tau[i])), max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
             else:
                 #add parameter without max bound
-                params.add("p" + str(i + 1), value=emission_amps[i], min=min_ts*(1-np.exp(-tau[i]))) #3 sigma min 
+                params.add(f'a{i}', value=emission_amps[i], min=min_ts*(1-np.exp(-tau[i]))) #3 sigma min 
             #print(params[f'p{i+1}'].value)
-            if i == 3:
-                print(f"amplitude 3 is {params[f'p{i+1}']}, tau is {tau[i]}, input width is {emission_widths[i]}")
+            #if i == 3:
+                #print(f"amplitude 3 is {params[f'a{i}']}, tau is {tau[i]}, input width is {emission_widths[i]}")
         #EMISSION ONLY
         else:
             #print(f'em amps {i}')
@@ -122,16 +122,16 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set the max Tb to be based on the absorption width and a 3 sigma tau
                     max_tb_value = (
-                        21.86 #make 21.866
+                        21.866
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-sigma_level_tau * sigma_tau))#3 sigma min tau
                     )
                 else:
                     max_tb_value = max_tb
-                params.add("p" + str(i + 1), value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)#3 sigma min
+                params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)#3 sigma min
             else:
-                params.add("p" + str(i + 1), value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value) #3 sigma min, should remove max bound here
-    for i in range(len(labels)):    
+                params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value) #3 sigma min, should remove max bound here
+    for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block   
     #WIDTHS (FWHM)
         #ABS-MATCHED
         if labels[i] == 1:  
@@ -139,38 +139,38 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             if p_width < 0.001:
                 p_width = 0.001
             params.add(
-                "p" + str(i + 1+ncomps),
+                f'w{i}',
                 value=emission_widths[i],
                 min=np.max([
                     (emission_widths[i] - np.abs(p_width * emission_widths[i])),
-                (np.sqrt((params[f'p{i+1}'].value)/(21.866*(1-np.exp(-tau[i])))))
+                (np.sqrt((params[f'a{i}'].value)/(21.866*(1-np.exp(-tau[i])))))
                 ]),
                 max=emission_widths[i] + np.abs(p_width * emission_widths[i])) #need to change to be based on the just determined amplitude #params[f'p{i-ncomps+1}'].value)
-            if i-ncomps == 3:
-                print(f"width 3 is {params[f'p{i+1+ncomps}']}")
+            #if i-ncomps == 3:
+                #print(f"width 3 is {params[f'w{i}']}")
         #EMISSION ONLY
         else:
             #print(f'em width {i-ncomps}')
-            params.add("p" + str(i + 1+ncomps), 
+            params.add(f'w{i}', 
             value=emission_widths[i], 
             min=np.max([
                 min_dv,
             np.sqrt(sigma_level_tb*sigma_tb/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau))))
             ]))
-    for i in range(len(labels)):            
+    for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block           
     #mean positions
         print(emission_means[i])
         if labels[i] == 1: #abs-matched
             if d_mean < 0.001:
                 d_mean = 0.001
             params.add(
-                "p" + str(i + 1+(2*ncomps)),
+                f'p{i}',
                 value=emission_means[i],
                 min=emission_means[i] - d_mean,
                 max=emission_means[i] + d_mean,
             )
         else: #emission only
-            params.add("p" + str(i + 1+(2*ncomps)), value=emission_means[i])
+            params.add(f'p{i}', value=emission_means[i])
     print(labels)
     print(params)
     print('iteration')
