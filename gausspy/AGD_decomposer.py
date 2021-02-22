@@ -99,7 +99,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set max amplitude based on the absorption fit amplitude and width to not be beyond what is possible when fully thermalised 
                     max_tb_value = (
-                        21.86
+                        21.866
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-1.0 * tau[i]))
                     )
@@ -122,7 +122,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set the max Tb to be based on the absorption width and a 3 sigma tau
                     max_tb_value = (
-                        21.86
+                        21.866
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-sigma_level_tau * sigma_tau))#3 sigma min tau
                     )
