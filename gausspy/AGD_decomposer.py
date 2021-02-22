@@ -37,25 +37,15 @@ def paramvec_to_lmfit(paramvec):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
     ncomps = len(paramvec) // 3
     params = Parameters()
-
-    absorption_amps = paramvec[:ncomps]
-    absorption_widths = paramvec[ncomps:2*ncomps]
-    absorption_means = paramvec[2*ncomps:3*ncomps]
-
-    sigma_level_tau=3
-    sigma_tau=0.0005897952
-    sigma_level_tb=3
-    sigma_tb=0.055
-
-    for i in range(ncomps):#for the amplitudes in opacity
-        params.add(f'tau_amp{i}', value=absorption_amps[i], min=sigma_level_tau*sigma_tau)
-
-    for i in range(ncomps): #for the widths in opacity
-        params.add(f'tau_width{i}', value=absorption_widths[i], 
-        min=np.max([np.sqrt(sigma_level_tb*sigma_tb/(21.866*(1-np.exp(-sigma_level_tau*sigma_tau))))])
+    for i in range(len(paramvec)):
+        if i < ncomps: #for the amplitudes in opacity 
+            params.add("p" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
+        if i >= ncomps and i < 2 * ncomps: #for the widths in opacity
+            params.add("p" + str(i + 1), value=paramvec[i], 
+            min=np.max([np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))])
         )
-    for i in range(ncomps): #the position
-        params.add(f'tau_pos{i}', value=absorption_means[i])
+        else: #for else whcih currently is just the position
+            params.add("p" + str(i + 1), value=paramvec[i])
     return params
 
 
@@ -109,7 +99,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set max amplitude based on the absorption fit amplitude and width to not be beyond what is possible when fully thermalised 
                     max_tb_value = (
-                        21.866
+                        21.86
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-1.0 * tau[i]))
                     )
@@ -132,7 +122,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set the max Tb to be based on the absorption width and a 3 sigma tau
                     max_tb_value = (
-                        21.866
+                        21.86
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-sigma_level_tau * sigma_tau))#3 sigma min tau
                     )
