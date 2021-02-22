@@ -39,13 +39,16 @@ def paramvec_to_lmfit(paramvec):
     params = Parameters()
     for i in range(len(paramvec)):
         if i < ncomps: #for the amplitudes in opacity 
-            params.add("p" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
+            params.add("a" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
         if i >= ncomps and i < 2 * ncomps: #for the widths in opacity
-            params.add("p" + str(i + 1), value=paramvec[i], 
+            params.add("w" + str(i + 1), value=paramvec[i], 
             min=np.max([np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))])
         )
         else: #for else whcih currently is just the position
             params.add("p" + str(i + 1), value=paramvec[i])
+    print('printing abs comps')
+    print(params)
+    print('done with abs comps')
     return params
 
 
@@ -58,7 +61,6 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     emission_widths = paramvec[ncomps:2*ncomps]
     emission_means = paramvec[2*ncomps:3*ncomps]
     labels = np.array(paramvec[3*ncomps:4*ncomps]).astype(int)
-    np.array([1.,2.,3.]).astype(int)
     tau = paramvec[4*ncomps:5*ncomps]
 
     print(f'length is {ncomps}')
@@ -99,7 +101,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set max amplitude based on the absorption fit amplitude and width to not be beyond what is possible when fully thermalised 
                     max_tb_value = (
-                        21.866
+                        21.86 #make 21.866
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-1.0 * tau[i]))
                     )
@@ -122,7 +124,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 if max_tb == "max":
                     #set the max Tb to be based on the absorption width and a 3 sigma tau
                     max_tb_value = (
-                        21.866
+                        21.86 #make 21.866
                         * np.float(emission_widths[i]) ** 2
                         * (1.0 - np.exp(-sigma_level_tau * sigma_tau))#3 sigma min tau
                     )
