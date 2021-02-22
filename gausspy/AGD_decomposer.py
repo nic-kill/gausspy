@@ -40,13 +40,13 @@ def paramvec_to_lmfit(paramvec):
     for i in range(len(paramvec)):
         if i < ncomps: #for the amplitudes in opacity 
             params.add("a" + str(i + 1), value=paramvec[i], min=0.0005897952*3)
-        if i >= ncomps and i < 2 * ncomps: #for the widths in opacity
+        elif i >= ncomps and i < 2 * ncomps: #for the widths in opacity
             params.add("w" + str(i + 1), value=paramvec[i], 
             min=np.max([np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))])
         )
         else: #for else whcih currently is just the position
             params.add("p" + str(i + 1), value=paramvec[i])
-    print('printing abs comps')
+    print(f'printing {len(params)} abs comps')
     print(params)
     print('done with abs comps')
     return params
