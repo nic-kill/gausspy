@@ -73,16 +73,15 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     labels = np.array(paramvec[3*ncomps:4*ncomps]).astype(int)
     tau = paramvec[4*ncomps:5*ncomps]  
 
-    min_ts=15
+    min_ts=15 #below this temp atomic H is unlikely to exist
     sigma_level_tau=3 #3 sigma min
     sigma_tau=0.0005897952 #0.0005897952 is the measured tau noise
     sigma_level_tb=3 #3 sigma min
     sigma_tb=0.055 #0.055mK is the estimate of the Tb noise from the GASS bonn server, 
 
 
-
+    #Tb AMPLITUDES
     for i in range(len(labels)): 
-        #Tb AMPLITUDES
         #ABS-MATCHED
         if labels[i] == 1: 
             if max_tb is not None:
@@ -110,7 +109,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     #set the max Tb to be based on the absorption width and a sigma_tau
                     max_tb_value = (
                         21.866
-                        * np.float(emission_widths[i]) ** 2
+                        * np.float(emission_widths[i]) ** 2 #check where the emission width intitial guess comes from and keep it below 30km/s
                         * (1.0 - np.exp(-sigma_level_tau * sigma_tau))
                     )
                 else:
@@ -118,11 +117,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)
             else:
                 params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb)) 
-    for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block    
     #WIDTHS (FWHM)
+    for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block    
         #ABS-MATCHED
         if labels[i] == 1:  
-            #print(f'abs width {i-ncomps}')
             if p_width < 0.001:
                 p_width = 0.001
             #params.add(
@@ -149,8 +147,6 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             #    expr=string
             #)
 
-            #if i-ncomps == 3:
-                #print(f"width 3 is {params[f'w{i}']}")
         #EMISSION ONLY
         else:
             #print(f'em width {i-ncomps}')
@@ -160,10 +156,11 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 min_dv,
             np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau)))) #needs to be based on previous amp calculated
             ])) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
+    
+    #POSITIONS
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block           
-    #mean positions
-        print(emission_means[i])
-        if labels[i] == 1: #abs-matched
+        #ABS-MATCHED
+        if labels[i] == 1:
             if d_mean < 0.001:
                 d_mean = 0.001
             params.add(
@@ -172,7 +169,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 min=emission_means[i] - d_mean,
                 max=emission_means[i] + d_mean,
             )
-        else: #emission only
+        #EMISSION ONLY
+        else:
             params.add(f'p{i}', value=emission_means[i])
     print(labels)
     print(params)
