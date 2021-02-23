@@ -138,7 +138,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
         #EMISSION ONLY
         else:#restore the commented out lines here after testing
             #print(f'em amps {i}')
-            if max_tb is not None:
+            #if max_tb is not None:
                 #if max_tb == "max":
                 #    #set the max Tb to be based on the absorption width and a 3 sigma tau
                 #    max_tb_value = (
