@@ -41,16 +41,23 @@ def paramvec_to_lmfit(paramvec):
     absorption_amps = paramvec[:ncomps]
     absorption_widths = paramvec[ncomps:2*ncomps]
     absorption_means = paramvec[2*ncomps:3*ncomps]
+
+    sigma_level_tau=3
+    sigma_tau=0.0005897952
+
+    sigma_level_tau=0
+    sigma_tau=0.0005897952
     
     for i in range(ncomps):        #for the amplitudes in opacity 
-            params.add(f'a{i}', value=absorption_amps[i], min=0.0005897952*3)
+            params.add(f'a{i}', value=absorption_amps[i], min=sigma_level_tau*sigma_tau)
         #elif i >= ncomps and i < 2 * ncomps: #for the widths in opacity
         #    params.add("w" + str(i + 1), value=paramvec[i], 
         #    min=np.max([np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))])
         #)
     for i in range(ncomps):
         #for widths
-            params.add(f'width{i}', value=absorption_widths[i])
+            params.add(f'width{i}', value=absorption_widths[i]) 
+            #min=(np.sqrt(0.055*3/(21.866*(1-np.exp(-3*0.0005897952))))))
     for i in range(ncomps):
         #for position
             params.add(f'position{i}', value=absorption_means[i])
@@ -99,6 +106,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     sigma_level_tb=3
     sigma_tb=0.055
 
+    #erase above values for testing
+    min_ts=0
+
 
     for i in range(len(labels)): #0.055mK is the estimate of the Tb noise from the GASS bonn server, 0.0005897952 is the measured tau noise
         #Tb AMPLITUDES
@@ -126,21 +136,21 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             #if i == 3:
                 #print(f"amplitude 3 is {params[f'a{i}']}, tau is {tau[i]}, input width is {emission_widths[i]}")
         #EMISSION ONLY
-        else:
+        else:#restore the commented out lines here after testing
             #print(f'em amps {i}')
             if max_tb is not None:
-                if max_tb == "max":
-                    #set the max Tb to be based on the absorption width and a 3 sigma tau
-                    max_tb_value = (
-                        21.86 #make 21.866
-                        * np.float(emission_widths[i]) ** 2
-                        * (1.0 - np.exp(-sigma_level_tau * sigma_tau))#3 sigma min tau
-                    )
-                else:
-                    max_tb_value = max_tb
-                params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)#3 sigma min
-            else:
-                params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value) #3 sigma min, should remove max bound here
+                #if max_tb == "max":
+                #    #set the max Tb to be based on the absorption width and a 3 sigma tau
+                #    max_tb_value = (
+                #        21.86 #make 21.866
+                #        * np.float(emission_widths[i]) ** 2
+                #        * (1.0 - np.exp(-sigma_level_tau * sigma_tau))#3 sigma min tau
+                #    )
+                #else:
+                #    max_tb_value = max_tb
+                #params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)#3 sigma min
+            #else:
+            params.add(f'a{i}', value=emission_amps[i], min=0)#(sigma_level_tb*sigma_tb), max=max_tb_value) #3 sigma min, should remove max bound here
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block    
     #WIDTHS (FWHM)
         #ABS-MATCHED
@@ -152,8 +162,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 f'w{i}',
                 value=emission_widths[i],
                 min=np.max([
-                    (emission_widths[i] - np.abs(p_width * emission_widths[i])),
-                (np.sqrt((params[f'a{i}'].value)/(21.866*(1-np.exp(-tau[i])))))
+                    (emission_widths[i] - np.abs(p_width * emission_widths[i]))#,
+                #(np.sqrt((params[f'a{i}'].value)/(21.866*(1-np.exp(-tau[i])))))
                 ]),
                 max=emission_widths[i] + np.abs(p_width * emission_widths[i])) #need to change to be based on the just determined amplitude #params[f'p{i-ncomps+1}'].value)
             #if i-ncomps == 3:
@@ -165,7 +175,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             value=emission_widths[i], 
             min=np.max([
                 min_dv,
-            np.sqrt(sigma_level_tb*sigma_tb/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau))))
+            #np.sqrt(sigma_level_tb*sigma_tb/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau))))
             ]))
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block           
     #mean positions
