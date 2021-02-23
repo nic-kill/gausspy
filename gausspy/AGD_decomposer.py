@@ -117,7 +117,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     max_tb_value = max_tb
                 params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)
             else:
-                params.add(f'a{i}', value=emission_amps[i], min=0(sigma_level_tb*sigma_tb)) 
+                params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb)) 
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block    
     #WIDTHS (FWHM)
         #ABS-MATCHED
@@ -137,7 +137,7 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 value=emission_widths[i],
                 min=np.max([
                     (emission_widths[i] - np.abs(p_width * emission_widths[i])),
-                (np.sqrt((params[f'a{i}'].value)/(21.866*(1-np.exp(-tau[i])))))
+                (np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
                 ]),
                 max=emission_widths[i] + np.abs(p_width * emission_widths[i]))
 
@@ -158,8 +158,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             value=emission_widths[i], 
             min=np.max([
                 min_dv,
-            np.sqrt(sigma_level_tb*sigma_tb/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau))))
-            ]))
+            np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau)))) #needs to be based on previous amp calculated
+            ])) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block           
     #mean positions
         print(emission_means[i])
