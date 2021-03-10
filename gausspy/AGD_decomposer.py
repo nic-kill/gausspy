@@ -62,7 +62,7 @@ def paramvec_to_lmfit(paramvec):
 
 
 
-def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
+def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=None, abs_pos=None):
     """ Transform a Python iterable of parameters into a LMFIT Parameters object"""
     ncomps = len(paramvec) // 5
     params = Parameters()
@@ -71,7 +71,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     emission_widths = paramvec[ncomps:2*ncomps]
     emission_means = paramvec[2*ncomps:3*ncomps]
     labels = np.array(paramvec[3*ncomps:4*ncomps]).astype(int)
-    tau = paramvec[4*ncomps:5*ncomps]  
+    tau = paramvec[4*ncomps:5*ncomps] 
+
 
     min_ts=15 #below this temp atomic H is unlikely to exist
     sigma_level_tau=3 #3 sigma min
@@ -140,10 +141,12 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             #    max=21.866*(1-np.exp(-tau[i])),
             #    vary=True
             #    )
+
             tenpercent=emission_widths[i] - np.abs(p_width * emission_widths[i])
             ampbased=np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))
             print(f'10% = {tenpercent}')
             print(f'amp based bound = {ampbased}')
+
             if tenpercent > ampbased:
                 print('10% IS HIGHER')
             else:
@@ -154,10 +157,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 value=ampbased+0.1, #revert to old line and delete, test only
                 #min=emission_widths[i] - np.abs(p_width * emission_widths[i]),
                 min=np.max([
-                    (emission_widths[i] - np.abs(p_width * emission_widths[i])),
+                    (abs_widths[i] - np.abs(p_width * abs_widths[i])),
                 (np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
                 ]),
-                max=emission_widths[i] + np.abs(p_width * emission_widths[i]))
+                max=abs_widths[i] + np.abs(p_width * abs_widths[i]))
 
             #not sure how or if i can also incorporate the p_width bounds into this parameter
             #string=f'sqrt(a{i}/delta{i})'
@@ -188,8 +191,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             params.add(
                 f'p{i}',
                 value=emission_means[i],
-                min=emission_means[i] - d_mean,
-                max=emission_means[i] + d_mean,
+                min=abs_pos[i] - d_mean,
+                max=abs_pos[i] + d_mean,
             )
         #EMISSION ONLY
         else:
@@ -1077,7 +1080,7 @@ def AGD_double(
             resids = (func(vel, *params).ravel() - data.ravel()) / errors
             return resids
 
-        params_full = np.concatenate(
+        params_full = np.concatenate( #i think this is em_amps(same as tau),em_widths,em_pos,labels,tau
             [params_fit, np.ones(ncomps_fit), params_fit[0:ncomps_fit]]
         )
         print("abs amps going into emission fit", params_fit[0:ncomps_fit])
@@ -1090,7 +1093,7 @@ def AGD_double(
         print(f'abs pos ={offsets_fit[w_keep]}')
 
         lmfit_params = paramvec_p3_to_lmfit(
-            params_full, max_tb, p_width, d_mean, min_dv
+            params_full, max_tb, p_width, d_mean, min_dv, abs_widths=fwhms_fit[w_keep], abs_pos=offsets_fit[w_keep]
         )
         result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
         params_em = vals_vec_from_lmfit(result_em.params)
@@ -1209,7 +1212,7 @@ def AGD_double(
         # Final fit using constrained parameters
         t0 = time.time()
         lmfit_params = paramvec_p3_to_lmfit(
-            params_full, max_tb, p_width, d_mean, min_dv
+            params_full, max_tb, p_width, d_mean, min_dv, abs_widths=fwhms_fit[w_keep], abs_pos=offsets_fit[w_keep]
         )
         result3 = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
         params_emfit = vals_vec_from_lmfit(result3.params)
