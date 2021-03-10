@@ -55,9 +55,9 @@ def paramvec_to_lmfit(paramvec):
     for i in range(ncomps): #for the positions in opacity
         params.add(f'position{i}', value=absorption_means[i])
 
-    print(f'printing {len(params)} abs comps')
-    print(params)
-    print('done with abs comps')
+    #print(f'printing {len(params)} abs comps')
+    #print(params)
+    #print('done with abs comps')
     return params
 
 
@@ -79,6 +79,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
     sigma_level_tb=3 #3 sigma min
     sigma_tb=0.055 #0.055mK is the estimate of the Tb noise from the GASS bonn server, 
 
+    print(f'emission_amps = {emission_amps}')
+    print(f'emission_widths = {emission_widths}')
+    print(f'emission_means = {emission_means}')
 
     #Tb AMPLITUDES
     for i in range(len(labels)): 
@@ -96,7 +99,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                     #set arbitrary max temperature
                     max_tb_value = max_tb
                 #add parametr with max bound
-                params.add(f'a{i}', value=emission_amps[i], min=min_ts*(1-np.exp(-tau[i])), max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
+                params.add(f'a{i}', value=emission_amps[i], 
+                #min=0,
+                min=min_ts*(1-np.exp(-tau[i])), 
+                max=max_tb_value) #possibly where the emission only comps and maybe some abs comps are being set? #3 sigma min and max set by the measured tau comp
             else:
                 #add parameter without max bound
                 params.add(f'a{i}', value=emission_amps[i], min=min_ts*(1-np.exp(-tau[i])))  
@@ -117,9 +123,13 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb), max=max_tb_value)
             else:
                 params.add(f'a{i}', value=emission_amps[i], min=(sigma_level_tb*sigma_tb)) 
+        print(f'amp {i} = {params[f"a{i}"]}')
+
+
     #WIDTHS (FWHM)
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block    
         #ABS-MATCHED
+        #print(emission_widths[i])
         if labels[i] == 1:  
             if p_width < 0.001:
                 p_width = 0.001
@@ -130,9 +140,19 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
             #    max=21.866*(1-np.exp(-tau[i])),
             #    vary=True
             #    )
+            tenpercent=emission_widths[i] - np.abs(p_width * emission_widths[i])
+            ampbased=np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))
+            print(f'10% = {tenpercent}')
+            print(f'amp based bound = {ampbased}')
+            if tenpercent > ampbased:
+                print('10% IS HIGHER')
+            else:
+                print('AMP BOUND IS HIGHER')
             params.add(
                 f'w{i}',
-                value=emission_widths[i],
+                #value=emission_widths[i],
+                value=ampbased+0.1, #revert to old line and delete, test only
+                #min=emission_widths[i] - np.abs(p_width * emission_widths[i]),
                 min=np.max([
                     (emission_widths[i] - np.abs(p_width * emission_widths[i])),
                 (np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
@@ -156,7 +176,9 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
                 min_dv,
             np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau)))) #needs to be based on previous amp calculated
             ])) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
-    
+        print(f'fwhm {i} = {params[f"w{i}"]}')
+
+
     #POSITIONS
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block           
         #ABS-MATCHED
@@ -172,9 +194,10 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv):
         #EMISSION ONLY
         else:
             params.add(f'p{i}', value=emission_means[i])
-    print(labels)
-    print(params)
-    print('iteration')
+        print(f'position {i} = {params[f"p{i}"]}')
+    #print(labels)
+    #print(params)
+    #print('iteration')
     return params
 
 
@@ -878,7 +901,7 @@ def AGD_double(
             else:
                 residuals = data
             # Finished producing residual signal # ---------------------------
-
+        #print(f'residuals = {residuals}')
         # Search for phase-two guesses
         agd2 = initialGuess(
             vel,
@@ -893,6 +916,7 @@ def AGD_double(
             deblend=deblend,
             # plot=plot,
         )
+        #print(f'AGD2 = {agd2}')
         ncomps_g2 = agd2["N_components"]
         if ncomps_g2 > 0:
             params_g2 = np.concatenate([agd2["amps"], agd2["FWHMs"], agd2["means"]])
@@ -1061,6 +1085,10 @@ def AGD_double(
         # Initial fit using constrained parameters
         t0 = time.time()
 
+        print(f'abs amps ={amps_fit[w_keep]}')
+        print(f'abs fwhms ={fwhms_fit[w_keep]}')
+        print(f'abs pos ={offsets_fit[w_keep]}')
+
         lmfit_params = paramvec_p3_to_lmfit(
             params_full, max_tb, p_width, d_mean, min_dv
         )
@@ -1217,5 +1245,5 @@ def AGD_double(
         odict["best_fit_parameters_em"] = []
         odict["best_fit_errors_em"] = []
         odict["fit_labels"] = []
-
+    print(odict.keys())
     return (1, odict)
