@@ -247,6 +247,11 @@ def func(x, *args):
         yout = yout + gaussian(args[i], args[i + ncomps], args[i + 2 * ncomps])(x)
     return yout
 
+def objective_leastsq(paramslm):
+    params = vals_vec_from_lmfit(paramslm)
+    resids = (func(vel, *params).ravel() - data.ravel()) / errors
+    return resids
+
 def exprfunc(x, *args):
     """Return multi-component Gaussian model F(x).
 
@@ -625,11 +630,6 @@ def AGD(
         say("\n\n  --> Final Fitting... \n", verbose)
 
         if ncomps_gf > 0:
-            # Objective functions for final fit
-            def objective_leastsq(paramslm):
-                params = vals_vec_from_lmfit(paramslm)
-                resids = (func(vel, *params).ravel() - data.ravel()) / errors
-                return resids
 
             # Final fit using unconstrained parameters
             t0 = time.time()
@@ -988,11 +988,6 @@ def AGD_double(
         say("\n\n  --> Final Fitting... \n", verbose)
 
         if ncomps_gf > 0:
-            # Objective functions for final fit
-            def objective_leastsq(paramslm):
-                params = vals_vec_from_lmfit(paramslm)
-                resids = (func(vel, *params).ravel() - data.ravel()) / errors
-                return resids
 
             # Final fit using unconstrained parameters
             t0 = time.time()
@@ -1014,6 +1009,8 @@ def AGD_double(
             rchi2 = np.sum((data - best_fit_final) ** 2 / errors ** 2) / len(data)
 
             # Check if any amplitudes are identically zero, if so, remove them.
+            print(f'original value = {params_fit[0:ncomps_fit]}')
+            print(f'as np array = {np.array(params_fit[0:ncomps_fit], dtype=float)}')
             amps_fit = np.array(params_fit[0:ncomps_fit], dtype=float)
             fwhms_fit = np.array(params_fit[ncomps_fit : 2 * ncomps_fit], dtype=float)
             offsets_fit = np.array(
@@ -1097,12 +1094,6 @@ def AGD_double(
     params_em_errs = []
     ncomps_em = 0
     if ncomps_fit > 0:
-
-        # Objective functions for  fit
-        def objective_leastsq(paramslm):
-            params = vals_vec_from_lmfit(paramslm)
-            resids = (func(vel, *params).ravel() - data.ravel()) / errors
-            return resids
 
         params_full = np.concatenate( #i think this is em_amps(same as tau),em_widths,em_pos,labels,tau
             [params_fit, np.ones(ncomps_fit), params_fit[0:ncomps_fit]]
@@ -1209,10 +1200,10 @@ def AGD_double(
             ncomps_g3 = len(em_amps)
 
             # print("ncomps_em", ncomps_em)
-            amps_emf = np.append(params_em[0:ncomps_em], em_amps)
-            widths_emf = np.append(params_em[ncomps_em : 2 * ncomps_em], em_widths)
+            amps_emf = np.append(params_em_amp, em_amps)
+            widths_emf = np.append(params_em_width, em_widths)
             offsets_emf = np.append(
-                params_em[2 * ncomps_em : 3 * ncomps_em], em_offsets
+                params_em_pos, em_offsets
             )
             tau_emf = np.append(params_fit[0:ncomps_em], np.zeros(ncomps_g3))
             labels_emf = np.append(np.ones(ncomps_em), np.zeros(ncomps_g3))
@@ -1224,7 +1215,7 @@ def AGD_double(
             tau_emf = np.zeros(ncomps_g3)
             labels_emf = np.zeros(ncomps_g3)
         params_emf = np.concatenate([amps_emf, widths_emf, offsets_emf])
-        ncomps_emf = len(params_emf) // 3
+        ncomps_emf = len(amps_emf)
     else:
         params_emf = params_em
         ncomps_emf = ncomps_em
@@ -1240,11 +1231,6 @@ def AGD_double(
     if ncomps_emf > 0:
         say("\n\n  --> Final Fitting... \n", verbose)
 
-        # Objective functions for final fit
-        def objective_leastsq(paramslm):
-            params = vals_vec_from_lmfit(paramslm)
-            resids = (func(vel, *params).ravel() - data.ravel()) / errors
-            return resids
 
         # Compile parameters, labels, and original optical depths for final fit:
         params_full = np.concatenate([params_emf, labels_emf, tau_emf])
