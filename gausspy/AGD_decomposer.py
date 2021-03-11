@@ -1150,7 +1150,7 @@ def AGD_double(
         fitmask, fitmaskw = create_fitmask(
             len(vel),
             v_to_i(params_em_pos),
-            params_em_width / dv / 2.355 * 0.9,,
+            params_em_width / dv / 2.355 * 0.9,
         )#
         notfitmask = 1 - fitmask
         # notfitmaskw = np.logical_not(fitmaskw)
