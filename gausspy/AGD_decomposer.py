@@ -1183,15 +1183,13 @@ def AGD_double(
     )
 
     ncomps_g3 = agd3["N_components"]
-
-
     # Check for phase three components, make final guess list
     # ------------------------------------------------------
     if ncomps_g3 > 0:
         abs_offsets = np.array(params_em_pos, dtype=float)
-        em_amps = np.array(params_g3[0:ncomps_g3], dtype=float)
-        em_widths = np.array(params_g3[ncomps_g3 : 2 * ncomps_g3], dtype=float)
-        em_offsets = np.array(params_g3[2 * ncomps_g3 : 3 * ncomps_g3], dtype=float)
+        em_amps = np.array(agd3["amps"], dtype=float)
+        em_widths = np.array(agd3["FWHMs"], dtype=float)
+        em_offsets = np.array(agd3["means"], dtype=float)
 
         indices = []
         # Check if any emission components are within 3 channels of an absorption component
