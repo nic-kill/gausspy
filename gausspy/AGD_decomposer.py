@@ -134,6 +134,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
         if labels[i] == 1:  
             if p_width < 0.001:
                 p_width = 0.001
+            #uncomment below line to implement the expr functionality
+            #params.add(f'd{i}', value=0.00001,min=0,max=21.866*(1-np.exp(-tau[i])),vary=True)
             #params.add(
             #    f'delta{i}',
             #    value=0.0000000001,#tau[i], #maybe a bad initial guess that won't always work. not certain.
@@ -151,6 +153,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
                 print('10% IS HIGHER')
             else:
                 print('AMP BOUND IS HIGHER')
+            #comment out below block to implement the expr functionality
+            #need to find a way to reincorporate the bounds for +-10% here
             params.add(
                 f'w{i}',
                 #value=emission_widths[i],
@@ -163,16 +167,18 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
                 max=abs_widths[i] + np.abs(p_width * abs_widths[i]))
 
             #not sure how or if i can also incorporate the p_width bounds into this parameter
-            #string=f'sqrt(a{i}/delta{i})'
-            #print(string)
-            #params.add(
-            #    f'w{i}',
-            #    expr=string
-            #)
-
+            #uncomment below line to implement the expr functionality
+            #params.add(f'w{i}', expr=f'sqrt(a{i}/d{i})')
         #EMISSION ONLY
         else:
             #print(f'em width {i-ncomps}')
+
+            #uncomment below block to implement the expr functionality
+            #params.add(f'd{i}', value=0.00001,min=0,max=21.866*(1-np.exp(-tau[i])),vary=True)
+            #params.add(f'w{i}', expr=f'sqrt(a{i}/d{i})')
+
+            #comment out below block to implement the expr functionality
+            #need to reincorporate the max of min_dv or the eqn here so it doesn't get too narrow
             params.add(f'w{i}', 
             value=emission_widths[i], 
             min=np.max([
@@ -239,6 +245,24 @@ def func(x, *args):
     yout = np.zeros(len(x))
     for i in range(ncomps):
         yout = yout + gaussian(args[i], args[i + ncomps], args[i + 2 * ncomps])(x)
+    return yout
+
+def exprfunc(x, *args):
+    """Return multi-component Gaussian model F(x).
+
+    Parameter vector kargs = [amp1, ..., ampN, width1, ..., widthN, mean1, ..., meanN],
+    and therefore has len(args) = 3 x N_components.
+    """
+    ncomps = len(args) // 3
+    yout = np.zeros(len(x))
+
+    amps=args[0:ncomps]
+    widths=args[ncomps:2*ncomps]
+    pos=args[2*ncomps:3*ncomps]
+    deltas=args[3*ncomp:4*ncomps]
+
+    for i in range(ncomps):
+        yout = yout + gaussian(amps[i], widths[i], pos[i])(x)
     return yout
 
 
@@ -1088,25 +1112,46 @@ def AGD_double(
         # Initial fit using constrained parameters
         t0 = time.time()
 
-        print(f'abs amps ={amps_fit[w_keep]}')
-        print(f'abs fwhms ={fwhms_fit[w_keep]}')
-        print(f'abs pos ={offsets_fit[w_keep]}')
-
+        #pass in abs pos and means to stop drift of values when allowing deviation from the emission values
         lmfit_params = paramvec_p3_to_lmfit(
             params_full, max_tb, p_width, d_mean, min_dv, abs_widths=fwhms_fit[w_keep], abs_pos=offsets_fit[w_keep]
         )
         result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
+        
+        amp_dict={key: value for key, value in result_em.params.items() if "a" in key}
+        width_dict={key: value for key, value in result_em.params.items() if "w" in key}
+        pos_dict={key: value for key, value in result_em.params.items() if "p" in key}
+        delta_dict={key: value for key, value in result_em.params.items() if "d" in key}
+
+        #print(f'result_em.params = {result_em.params}')
+        #print(amp_dict)
+        #print(width_dict)
+        #print(pos_dict)
+
         params_em = vals_vec_from_lmfit(result_em.params)
+        params_em_amp = vals_vec_from_lmfit(amp_dict)
+        params_em_width = vals_vec_from_lmfit(width_dict)
+        params_em_pos = vals_vec_from_lmfit(pos_dict)
+        params_em_delta = vals_vec_from_lmfit(delta_dict)
+
+        print(params_em)
+        print(params_em_pos)
+        params_em_nodelta = np.concatenate([ #not sure if this will be useful as delta is not a superfluous parameter
+            params_em_amp,
+            params_em_width,
+            params_em_pos])
+
+        print(f'params_em = {params_em}')
         params_em_errs = errs_vec_from_lmfit(result_em.params)
-        ncomps_em = len(params_em) // 3
+        ncomps_em = len(amp_dict.keys()) #explicitly defines the length instead of inferring from length of params var which will change with new params
         
 
         # The "fitmask" is a collection of windows around the a list of two-phase absorption components
         fitmask, fitmaskw = create_fitmask(
             len(vel),
-            v_to_i(params_em[2 * ncomps_em : 3 * ncomps_em]),
-            params_em[ncomps_em : 2 * ncomps_em] / dv / 2.355 * 0.9,
-        )
+            v_to_i(params_em_pos),
+            params_em_width / dv / 2.355 * 0.9,,
+        )#
         notfitmask = 1 - fitmask
         # notfitmaskw = np.logical_not(fitmaskw)
 
@@ -1215,6 +1260,7 @@ def AGD_double(
             params_full, max_tb, p_width, d_mean, min_dv, abs_widths=fwhms_fit[w_keep], abs_pos=offsets_fit[w_keep]
         )
         result3 = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
+        print(result3.params)
         params_emfit = vals_vec_from_lmfit(result3.params)
         print(f'params_emfit = {params_emfit}')
         params_emfit_errs = errs_vec_from_lmfit(result3.params)
