@@ -1158,7 +1158,7 @@ def AGD_double(
         # Compute intermediate residuals
         # Median filter on 2 x effective scale to remove poor subtractions of strong components
         intermediate_model = func(
-            vel, *params_em
+            vel, *params_em_nodelta
         ).ravel()  # Explicit final (narrow) model
         median_window = 2.0 * 10 ** ((np.log10(alpha_em) + 2.187) / 3.859)
         residuals = median_filter(data - intermediate_model, np.int(median_window))
@@ -1167,6 +1167,7 @@ def AGD_double(
         residuals = data
         # Finished producing residual emission signal # ---------------------------
 
+    #initial guesses won't have the delta and expression bounds that paramvec_p3_to_lmfit has but that probably isn't an issue for the guesses
     # Search for phase-three guesses in residual emission spectrum
     agd3 = initialGuess(
         vel,
@@ -1186,14 +1187,13 @@ def AGD_double(
         params_g3 = np.concatenate([agd3["amps"], agd3["FWHMs"], agd3["means"]])
     else:
         params_g3 = []
-    u22 = agd3["u2"]
 
     # Check for phase three components, make final guess list
     # ------------------------------------------------------
     if ncomps_g3 > 0:
-        abs_offsets = np.array(params_em[2 * ncomps_em : 3 * ncomps_em], dtype=float)
-        em_widths = np.array(params_g3[ncomps_g3 : 2 * ncomps_g3], dtype=float)
+        abs_offsets = np.array(params_em_pos, dtype=float)
         em_amps = np.array(params_g3[0:ncomps_g3], dtype=float)
+        em_widths = np.array(params_g3[ncomps_g3 : 2 * ncomps_g3], dtype=float)
         em_offsets = np.array(params_g3[2 * ncomps_g3 : 3 * ncomps_g3], dtype=float)
 
         indices = []
