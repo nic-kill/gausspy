@@ -1183,8 +1183,6 @@ def AGD_double(
     )
 
     ncomps_g3 = agd3["N_components"]
-    if ncomps_g3 > 0:
-        params_g3 = np.concatenate([agd3["amps"], agd3["FWHMs"], agd3["means"]])
 
 
     # Check for phase three components, make final guess list
