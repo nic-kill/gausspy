@@ -247,8 +247,33 @@ def func(x, *args):
         yout = yout + gaussian(args[i], args[i + ncomps], args[i + 2 * ncomps])(x)
     return yout
 
-def objective_leastsq(paramslm):
-    params = vals_vec_from_lmfit(paramslm)
+def param_extract(dictionary, unique_identifier):
+    """
+    inputs:
+    dictionary - any dictionary (usually a lmfit_minimise result such as result.params)
+    unique_identifier - any string that occurs only in the target keys from the dictionary i.e.'a','w','p' or 'd'
+    could work with floats or longer string etc but i don't guarantee that as its untested.
+
+    Pulls out key,value pairs from a dictionary based on idenitifiers in the key. 
+    In most cases used to withdraw the amplitude,width,position and delta parameters that 
+    were output from lmfit_minimize.
+    e.g. param_extract(result_em.params,'a') will pull from the result_em.params dictionary 
+    all the keys with a in their name that should denote an amplitude value
+    """
+    return {key: value for key, value in dictionary.items() if unique_identifier in key}
+
+def objective_leastsq(paramslm, vel, data, errors):
+
+    amp_dict=param_extract(paramslm,'a')
+    width_dict=param_extract(paramslm,'w')
+    pos_dict=param_extract(paramslm,'p')
+    delta_dict=param_extract(paramslm,'d') #not passed further down the line but needs to be input into lmfit minimise
+
+    params = np.concatenate([
+        vals_vec_from_lmfit(amp_dict),
+        vals_vec_from_lmfit(width_dict),
+        vals_vec_from_lmfit(pos_dict)])
+
     resids = (func(vel, *params).ravel() - data.ravel()) / errors
     return resids
 
@@ -634,7 +659,7 @@ def AGD(
             # Final fit using unconstrained parameters
             t0 = time.time()
             lmfit_params = paramvec_to_lmfit(params_gf)
-            result2 = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
+            result2 = lmfit_minimize(objective_leastsq, lmfit_params, args=(vel,data,errors), method="leastsq")
             params_fit = vals_vec_from_lmfit(result2.params)
             params_errs = errs_vec_from_lmfit(result2.params)
             ncomps_fit = len(params_fit) // 3
@@ -992,7 +1017,7 @@ def AGD_double(
             # Final fit using unconstrained parameters
             t0 = time.time()
             lmfit_params = paramvec_to_lmfit(params_gf)
-            result2 = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
+            result2 = lmfit_minimize(objective_leastsq, lmfit_params, args=(vel,data,errors), method="leastsq")
             params_fit = vals_vec_from_lmfit(result2.params)
             params_errs = errs_vec_from_lmfit(result2.params)
             ncomps_fit = len(params_fit) // 3
@@ -1107,12 +1132,12 @@ def AGD_double(
         lmfit_params = paramvec_p3_to_lmfit(
             params_full, max_tb, p_width, d_mean, min_dv, abs_widths=fwhms_fit[w_keep], abs_pos=offsets_fit[w_keep]
         )
-        result_em = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
+        result_em = lmfit_minimize(objective_leastsq, lmfit_params, args=(vel,data,errors), method="leastsq")
         
-        amp_dict={key: value for key, value in result_em.params.items() if "a" in key}
-        width_dict={key: value for key, value in result_em.params.items() if "w" in key}
-        pos_dict={key: value for key, value in result_em.params.items() if "p" in key}
-        delta_dict={key: value for key, value in result_em.params.items() if "d" in key}
+        amp_dict=param_extract(result_em.params,"a")
+        width_dict=param_extract(result_em.params,"w")
+        pos_dict=param_extract(result_em.params,"p")
+        delta_dict=param_extract(result_em.params,"d")
 
         #print(f'result_em.params = {result_em.params}')
         #print(amp_dict)
@@ -1231,7 +1256,6 @@ def AGD_double(
     if ncomps_emf > 0:
         say("\n\n  --> Final Fitting... \n", verbose)
 
-
         # Compile parameters, labels, and original optical depths for final fit:
         params_full = np.concatenate([params_emf, labels_emf, tau_emf])
 
@@ -1240,17 +1264,27 @@ def AGD_double(
         lmfit_params = paramvec_p3_to_lmfit(
             params_full, max_tb, p_width, d_mean, min_dv, abs_widths=fwhms_fit[w_keep], abs_pos=offsets_fit[w_keep]
         )
-        result3 = lmfit_minimize(objective_leastsq, lmfit_params, method="leastsq")
+        result3 = lmfit_minimize(objective_leastsq, lmfit_params, args=(vel,data,errors), method="leastsq")
         print(result3.params)
         params_emfit = vals_vec_from_lmfit(result3.params)
+        params_emfit_amp = vals_vec_from_lmfit(param_extract(result3.params,'a'))
+        params_emfit_width = vals_vec_from_lmfit(param_extract(result3.params,'w'))
+        params_emfit_pos = vals_vec_from_lmfit(param_extract(result3.params,'p'))
+        params_emfit_delta = vals_vec_from_lmfit(param_extract(result3.params,'d'))
+
         print(f'params_emfit = {params_emfit}')
         params_emfit_errs = errs_vec_from_lmfit(result3.params)
-        ncomps_emfit = len(params_emfit) // 3
+        ncomps_emfit = len(params_emfit_amp)
         print(f'ncomps_emfit = {ncomps_emfit}')
         del lmfit_params
         say("Final fit took {0} seconds.".format(time.time() - t0), verbose)
 
-        best_fit_final = func(vel, *params_emfit).ravel()
+        params_emfit_nodelta = np.concatenate([ #not sure if this will be useful as delta is not a superfluous parameter
+            params_emfit_amp,
+            params_emfit_width,
+            params_emfit_pos])
+
+        best_fit_final = func(vel, *params_emfit_nodelta).ravel()
         rchi2 = np.sum((data - best_fit_final) ** 2 / errors ** 2) / len(data)
     else:
         ncomps_emfit = ncomps_emf
