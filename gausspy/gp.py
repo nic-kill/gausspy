@@ -323,7 +323,7 @@ class GaussianDecomposer(object):
 
             if self.p["alpha_em"] is not None:
                 ncomps = (
-                    len(result["best_fit_parameters_em"]) // 3
+                    len(result["best_fit_parameters_em"]) // 4
                     if "best_fit_parameters_em" in result
                     else 0
                 )

@@ -83,6 +83,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
     print(f'emission_amps = {emission_amps}')
     print(f'emission_widths = {emission_widths}')
     print(f'emission_means = {emission_means}')
+    print(f'tau = {tau}')
+    print(f'labels = {labels}')
 
     #Tb AMPLITUDES
     for i in range(len(labels)): 
@@ -137,12 +139,12 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
             #uncomment below line to implement the expr functionality
             #params.add(f'd{i}', value=0.00001,min=0,max=21.866*(1-np.exp(-tau[i])),vary=True)
             #params.add(
-            #    f'delta{i}',
-            #    value=0.0000000001,#tau[i], #maybe a bad initial guess that won't always work. not certain.
-            #    min=0,
-            #    max=21.866*(1-np.exp(-tau[i])),
-            #    vary=True
-            #    )
+            #   f'delta{i}',
+            #   value=0.0000000001,#tau[i], #maybe a bad initial guess that won't always work. not certain.
+            #   min=0,
+            #   max=21.866*(1-np.exp(-tau[i])),
+            #   vary=True
+            #   )
 
             tenpercent=emission_widths[i] - np.abs(p_width * emission_widths[i])
             ampbased=np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))
@@ -165,18 +167,18 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
                 (np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-tau[i]))))) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
                 ]),
                 max=abs_widths[i] + np.abs(p_width * abs_widths[i]))
-
+            #params.add(f'tm{i}', value=9999999999999, vary=False)
             #not sure how or if i can also incorporate the p_width bounds into this parameter
             #uncomment below line to implement the expr functionality
-            #params.add(f'w{i}', expr=f'sqrt(a{i}/d{i})')
+            # params.add(f'w{i}', expr=f'sqrt(a{i}/d{i})')
         #EMISSION ONLY
         else:
             #print(f'em width {i-ncomps}')
 
             #uncomment below block to implement the expr functionality
-            #params.add(f'd{i}', value=0.00001,min=0,max=21.866*(1-np.exp(-tau[i])),vary=True)
-            #params.add(f'w{i}', expr=f'sqrt(a{i}/d{i})')
-
+            # params.add(f'd{i}', value=0.00001,min=0,max=21.866*(1-np.exp(-tau[i])),vary=True) #maybe select a more informed intitial value than 0.00001
+            # params.add(f'w{i}', expr=f'sqrt(a{i}/d{i})')
+            #params.add(f'te{i}', value=9999999999999, vary=False)
             #comment out below block to implement the expr functionality
             #need to reincorporate the max of min_dv or the eqn here so it doesn't get too narrow
             params.add(f'w{i}', 
@@ -185,12 +187,14 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
                 min_dv,
             np.sqrt((params[f'a{i}'].max)/(21.866*(1-np.exp(-sigma_level_tau * sigma_tau)))) #needs to be based on previous amp calculated
             ])) #using .max is a bit of a brute force solution and is excessive since the actual value may not come that high, will prohibit the solution of fully thermalised lines
+        #print(f'delta {i} = {params[f"d{i}"]}')
         print(f'fwhm {i} = {params[f"w{i}"]}')
 
 
     #POSITIONS
     for i in range(len(labels)): #delete this redundant loop, just for confirming teh same order of exectuion for rewriting block           
         #ABS-MATCHED
+        print(labels)
         if labels[i] == 1:
             if d_mean < 0.001:
                 d_mean = 0.001
@@ -207,6 +211,8 @@ def paramvec_p3_to_lmfit(paramvec, max_tb, p_width, d_mean, min_dv, abs_widths=N
     #print(labels)
     #print(params)
     #print('iteration')
+    for i in range(len(labels)):
+        params.add(f't{i}', value=9999999999999, vary=False)
     return params
 
 
@@ -276,24 +282,6 @@ def objective_leastsq(paramslm, vel, data, errors):
 
     resids = (func(vel, *params).ravel() - data.ravel()) / errors
     return resids
-
-def exprfunc(x, *args):
-    """Return multi-component Gaussian model F(x).
-
-    Parameter vector kargs = [amp1, ..., ampN, width1, ..., widthN, mean1, ..., meanN],
-    and therefore has len(args) = 3 x N_components.
-    """
-    ncomps = len(args) // 3
-    yout = np.zeros(len(x))
-
-    amps=args[0:ncomps]
-    widths=args[ncomps:2*ncomps]
-    pos=args[2*ncomps:3*ncomps]
-    deltas=args[3*ncomp:4*ncomps]
-
-    for i in range(ncomps):
-        yout = yout + gaussian(amps[i], widths[i], pos[i])(x)
-    return yout
 
 
 def initialGuess(
@@ -1301,6 +1289,8 @@ def AGD_double(
     # )
     # print(params_emfit)
     odict["N_components_em"] = ncomps_emfit
+    print(f'ncomps_em = {ncomps_em}')
+    print(f'ncomps_emfit = {ncomps_emfit}')
     if ncomps_emfit >= ncomps_fit:
         odict["best_fit_parameters_em"] = params_emfit
         odict["best_fit_errors_em"] = params_emfit_errs
