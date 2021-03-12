@@ -251,10 +251,12 @@ class GaussianDecomposer(object):
             "best_fit_rchi2",
             "amplitudes_fit_em",
             "fwhms_fit_em",
+            "deltas_fit_em",
             "means_fit_em",
             "means_fit_err_em",
             "amplitudes_fit_err_em",
             "fwhms_fit_err_em",
+            "deltas_fit_err_em",
             "fit_labels",
         ]
 
@@ -341,6 +343,12 @@ class GaussianDecomposer(object):
                     if "best_fit_parameters_em" in result
                     else []
                 )
+                deltas = (
+                    AGD_decomposer.vals_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_parameters_em"],'d'))
+                    if "best_fit_parameters_em" in result
+                    else []
+                )
                 offsets = (
                     AGD_decomposer.vals_vec_from_lmfit(
                         AGD_decomposer.param_extract(result["best_fit_parameters_em"],'p'))
@@ -353,6 +361,7 @@ class GaussianDecomposer(object):
 
                 output_data["amplitudes_fit_em"].append(amps)
                 output_data["fwhms_fit_em"].append(fwhms)
+                output_data["deltas_fit_em"].append(deltas)
                 output_data["means_fit_em"].append(offsets)
                 output_data["fit_labels"].append(fit_labels)
 
@@ -368,16 +377,23 @@ class GaussianDecomposer(object):
                     if "best_fit_parameters_em" in result
                     else []
                 )
+                deltas_err = (
+                    AGD_decomposer.errs_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_errors_em"],'d'))
+                    if "best_fit_parameters_em" in result
+                    else []
+                )
                 offsets_err = (
                     AGD_decomposer.errs_vec_from_lmfit(
                         AGD_decomposer.param_extract(result["best_fit_errors_em"],'p'))
                     if "best_fit_parameters_em" in result
                     else []
                 )
-
-                output_data["means_fit_err_em"].append(offsets_err)
-                output_data["fwhms_fit_err_em"].append(fwhms_err)
+                #this seems like an unnecessary extra step when it can just be assigned in the blocks above
                 output_data["amplitudes_fit_err_em"].append(amps_err)
+                output_data["fwhms_fit_err_em"].append(fwhms_err)
+                output_data["deltas_fit_err_em"].append(deltas_err)
+                output_data["means_fit_err_em"].append(offsets_err)
 
         print("100 finished.%")
         return output_data
