@@ -323,23 +323,27 @@ class GaussianDecomposer(object):
 
             if self.p["alpha_em"] is not None:
                 ncomps = (
-                    len(result["best_fit_parameters_em"]) // 4
+                    len(AGD_decomposer.param_extract(result["best_fit_parameters_em"],'a'))
                     if "best_fit_parameters_em" in result
                     else 0
                 )
+                print(ncomps)
                 # print("to save:", ncomps)
                 amps = (
-                    result["best_fit_parameters_em"][0:ncomps]
+                    AGD_decomposer.vals_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_parameters_em"],'a'))
                     if "best_fit_parameters_em" in result
                     else []
                 )
                 fwhms = (
-                    result["best_fit_parameters_em"][ncomps : 2 * ncomps]
+                    AGD_decomposer.vals_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_parameters_em"],'w'))
                     if "best_fit_parameters_em" in result
                     else []
                 )
                 offsets = (
-                    result["best_fit_parameters_em"][2 * ncomps : 3 * ncomps]
+                    AGD_decomposer.vals_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_parameters_em"],'p'))
                     if "best_fit_parameters_em" in result
                     else []
                 )
@@ -353,17 +357,20 @@ class GaussianDecomposer(object):
                 output_data["fit_labels"].append(fit_labels)
 
                 amps_err = (
-                    result["best_fit_errors_em"][0:ncomps]
+                    AGD_decomposer.errs_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_errors_em"],'a'))
                     if "best_fit_parameters_em" in result
                     else []
                 )
                 fwhms_err = (
-                    result["best_fit_errors_em"][ncomps : 2 * ncomps]
+                    AGD_decomposer.errs_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_errors_em"],'w'))
                     if "best_fit_parameters_em" in result
                     else []
                 )
                 offsets_err = (
-                    result["best_fit_errors_em"][2 * ncomps : 3 * ncomps]
+                    AGD_decomposer.errs_vec_from_lmfit(
+                        AGD_decomposer.param_extract(result["best_fit_errors_em"],'p'))
                     if "best_fit_parameters_em" in result
                     else []
                 )

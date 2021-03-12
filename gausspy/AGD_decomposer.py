@@ -1292,8 +1292,8 @@ def AGD_double(
     print(f'ncomps_em = {ncomps_em}')
     print(f'ncomps_emfit = {ncomps_emfit}')
     if ncomps_emfit >= ncomps_fit:
-        odict["best_fit_parameters_em"] = params_emfit
-        odict["best_fit_errors_em"] = params_emfit_errs
+        odict["best_fit_parameters_em"] = result3.params
+        odict["best_fit_errors_em"] = result3.params
         odict["fit_labels"] = labels_emf
     else:
         odict["best_fit_parameters_em"] = []
